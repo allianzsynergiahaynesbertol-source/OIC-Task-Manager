@@ -29,10 +29,11 @@
     "directories": {
       "output": "dist"
     },
-    "files": [
-      "main.js",
-      "index.html"
-    ]
+"files": [
+  "main.js",
+  "index.html",
+  "icon.ico"
+]
   },
   "devDependencies": {
     "electron": "^29.0.0",
