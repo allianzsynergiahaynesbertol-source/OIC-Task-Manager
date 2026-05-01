@@ -2,6 +2,7 @@
   "name": "oic-task-manager",
   "version": "1.0.0",
   "description": "Officer In Charge Task Manager",
+  "author": "OIC",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
