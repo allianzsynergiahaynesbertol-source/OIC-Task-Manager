@@ -10,10 +10,10 @@
   "build": {
     "appId": "com.oic.taskmanager",
     "productName": "OIC Task Manager",
-    "win": {
-      "target": "nsis",
-      "icon": "icon.ico",
-      "requestedExecutionLevel": "asInvoker"
+"win": {
+  "target": "nsis",
+  "requestedExecutionLevel": "asInvoker"
+}
     },
     "nsis": {
       "oneClick": false,
@@ -28,11 +28,10 @@
     "directories": {
       "output": "dist"
     },
-    "files": [
-      "main.js",
-      "index.html",
-      "icon.ico"
-    ]
+"files": [
+  "main.js",
+  "index.html"
+]
   },
   "devDependencies": {
     "electron": "^29.0.0",
