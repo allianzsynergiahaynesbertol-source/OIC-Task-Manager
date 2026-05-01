@@ -11,10 +11,11 @@
   "build": {
     "appId": "com.oic.taskmanager",
     "productName": "OIC Task Manager",
-    "win": {
-      "target": "nsis",
-      "requestedExecutionLevel": "asInvoker"
-    },
+ "win": {
+  "target": "nsis",
+  "requestedExecutionLevel": "asInvoker",
+  "icon": "icon.ico"
+},
     "nsis": {
       "oneClick": false,
       "perMachine": false,
