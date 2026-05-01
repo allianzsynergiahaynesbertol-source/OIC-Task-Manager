@@ -9,18 +9,25 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 22
+      - name: Setup Node 22
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'npm'
 
-      - name: Install dependencies
+      - name: Install
+        shell: cmd
         run: npm install
 
+      - name: Generate icon.ico
+        shell: cmd
+        run: node generate-icon.js
+
       - name: Build Windows EXE
+        shell: cmd
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run build
