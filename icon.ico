@@ -1,0 +1,4 @@
+"win": {
+  "target": "nsis",
+  "requestedExecutionLevel": "asInvoker"
+}
