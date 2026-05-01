@@ -10,7 +10,6 @@ function createWindow() {
     minWidth: 420,
     minHeight: 600,
     title: 'OIC Task Manager',
-    icon: path.join(__dirname, 'icon.ico'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
