@@ -107,7 +107,17 @@ function el(tag,attrs,children){
 function div(a,c){return el('div',a,c);}
 function span(a,c){return el('span',a,c);}
 function mkBtn(cls,text,onClick,style){const b=el('button',{className:'btn '+cls,style:style||{}},text);b.addEventListener('click',onClick);return b;}
-function mkInp(type,val,onChange,attrs){const i=el('input',Object.assign({type,value:val||''},attrs||{}));i.addEventListener('input',e=>onChange(e.target.value));return i;}
+function mkInp(type,val,onChange,attrs){
+  const i=el('input',Object.assign({type,value:val||''},attrs||{}));
+  if(type==='text'||type==='textarea'){
+    i.addEventListener('input',e=>onChange(e.target.value,true));
+    i.addEventListener('change',e=>onChange(e.target.value,false));
+  }else{
+    i.addEventListener('input',e=>onChange(e.target.value));
+    i.addEventListener('change',e=>onChange(e.target.value));
+  }
+  return i;
+}
 function mkSel(options,val,onChange){
   const s=el('select',{className:'inp'});
   options.forEach(([v,l])=>{const o=el('option',{value:v},l||v);if(v===val)o.selected=true;s.appendChild(o);});
@@ -123,7 +133,7 @@ let state={
   expanded:{},remarkId:null,remarkText:'',rescheduleId:null,rescheduleDate:'',
   skipPanel:null,skipFrom:'',skipTo:'',selected:new Set(),
 };
-function setState(p){Object.assign(state,p);render();}
+function setState(p,skipRender){Object.assign(state,p);if(!skipRender)render();}
 function saveTasks(tasks,logs){
   store.set('oic_tasks',tasks);
   if(logs!==undefined)store.set('oic_logs',logs);
@@ -276,7 +286,7 @@ function makeTaskCard(t,{showDays,isRecur,num}={}) {
     if(state.skipPanel!==t.id){
       const oa=[];
       if(state.remarkId===t.id){
-        const ri=mkInp('text',state.remarkText,v=>setState({remarkText:v}),{className:'inp',placeholder:'Enter remark…',style:{flex:'1'}});
+        const ri=mkInp('text',state.remarkText,(v,skip)=>setState({remarkText:v},skip),{className:'inp',placeholder:'Enter remark…',style:{flex:'1'}});
         ri.addEventListener('keydown',e=>{if(e.key==='Enter')saveRemark(t.id);});
         oa.push(div({style:{width:'100%',display:'flex',gap:'8px'}},[ri,mkBtn('btn-navy','Save',()=>saveRemark(t.id)),mkBtn('btn-ghost','✕',()=>setState({remarkId:null}))]));
       }else oa.push(mkBtn('btn-ghost','📝 Remark',()=>setState({remarkId:t.id,remarkText:t.remark||''})));
@@ -449,7 +459,7 @@ function render(){
       const formEl=div({className:'card',style:{border:'1.5px solid var(--navy)',marginBottom:'1.25rem'}},[
         div({className:'hdr',style:{fontSize:'16px',marginBottom:'12px'}},state.editId?'Edit Task':'New Task'),
         div({style:{display:'grid',gap:'10px'}},[
-          mkInp('text',f.title,v=>setState({form:{...state.form,title:v}}),{className:'inp',placeholder:'Task title *'}),
+          mkInp('text',f.title,  (v,skip)=>setState({form:{...state.form,title:v}},skip),  {className:'inp',placeholder:'Task title *'}),
           div({className:'grid3'},[
             mkSel(PRIOS.map(p=>[p,p]),f.priority,v=>setState({form:{...state.form,priority:v}})),
             mkSel(CATS.map(c=>[c,c]),f.category,v=>setState({form:{...state.form,category:v}})),
@@ -457,7 +467,7 @@ function render(){
           ]),
           div({className:'grid2'},[
             div({},[div({style:{fontSize:'12px',color:'var(--muted)',marginBottom:'4px'}},'Recurrence'),mkSel(RECUR,f.recur,v=>setState({form:{...state.form,recur:v}}))]),
-            div({},[div({style:{fontSize:'12px',color:'var(--muted)',marginBottom:'4px'}},'Note'),mkInp('text',f.note,v=>setState({form:{...state.form,note:v}}),{className:'inp',placeholder:'Optional note…'})]),
+            div({},[div({style:{fontSize:'12px',color:'var(--muted)',marginBottom:'4px'}},'Note'),mkInp('text',f.note,(v,skip)=>setState({form:{...state.form,note:v}},skip),{className:'inp',placeholder:'Optional note…'})]),
           ]),
           div({style:{display:'flex',gap:'8px'}},[
             mkBtn('btn-primary',state.editId?'Save Changes':'Add Task',submitForm),
