@@ -742,27 +742,87 @@ function settingsTab(){
   ac.appendChild(row('Theme',APP.dark?'Currently: Dark':'Currently: Light',btn(APP.dark?'btn-navy':'btn-ghost',APP.dark?'Switch to Light':'Switch to Dark',function(){S.set('oic_dark',!APP.dark);set({dark:!APP.dark});})));
 
   var dataC=d({className:'card',style:{marginBottom:'1.25rem'}});
-  dataC.appendChild(d({className:'hdr',style:{fontSize:'16px',marginBottom:'12px'}},'Data management'));
-  var expBtn=btn('btn-ghost','⬇ Export JSON',function(){
-    var blob=new Blob([JSON.stringify({tasks:APP.tasks,logs:APP.logs,cfg:APP.cfg,on:today()},null,2)],{type:'application/json'});
-    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='oic-backup-'+today()+'.json';a.click();
+  dataC.appendChild(d({className:'hdr',style:{fontSize:'16px',marginBottom:'4px'}},'Data management'));
+  dataC.appendChild(d({style:{fontSize:'12px',color:'var(--muted)',marginBottom:'12px'}},'Export your data to transfer between devices or keep as a backup.'));
+
+  // Export
+  var expBtn=btn('btn-ghost','⬇ Export backup (JSON)',function(){
+    var data={tasks:APP.tasks,logs:APP.logs,cfg:APP.cfg,exportedOn:today(),version:'1.0'};
+    var json=JSON.stringify(data,null,2);
+    var blob=new Blob([json],{type:'application/json'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='oic-backup-'+today()+'.json';
+    a.click();
   });
+
+  // Export summary
+  var expSummary=d({style:{fontSize:'12px',color:'var(--muted)',marginTop:'6px'}},
+    'Contains: '+APP.tasks.length+' tasks, '+APP.logs.length+' log entries. Save this file to Google Drive, email it to yourself, or copy to a USB to transfer to another device.');
+
+  var expWrap=d({});
+  expWrap.appendChild(expBtn);
+  expWrap.appendChild(expSummary);
+
+  // Import
   var impFile=el('input',{type:'file',accept:'.json',style:{display:'none'}});
   impFile.addEventListener('change',function(e){
     var f=e.target.files[0];if(!f)return;
     var r=new FileReader();
     r.onload=function(ev){
-      try{var data=JSON.parse(ev.target.result);if(!data.tasks){alert('Invalid file.');return;}
-        if(window.confirm('Replace all tasks and logs?')){S.set('oic_tasks9',data.tasks);S.set('oic_logs9',data.logs||[]);if(data.cfg)S.set('oic_cfg',data.cfg);set({tasks:data.tasks,logs:data.logs||[],cfg:data.cfg||APP.cfg});}}
-      catch(err){alert('Could not read file.');}};
+      try{
+        var data=JSON.parse(ev.target.result);
+        if(!data.tasks){alert('Invalid backup file. Please use a file exported from OIC Task Manager.');return;}
+        var msg='This will import:\n• '+data.tasks.length+' tasks\n• '+(data.logs||[]).length+' log entries\n• Exported on: '+(data.exportedOn||'unknown')+'\n\nChoose how to import:';
+        var choice=window.confirm(msg+'\n\nOK = Replace all current data\nCancel = Merge with current data (keeps both)');
+        if(choice){
+          // Replace
+          S.set('oic_tasks9',data.tasks);
+          S.set('oic_logs9',data.logs||[]);
+          if(data.cfg)S.set('oic_cfg',data.cfg);
+          set({tasks:data.tasks,logs:data.logs||[],cfg:data.cfg||APP.cfg});
+          alert('Data replaced successfully! '+data.tasks.length+' tasks loaded.');
+        }else{
+          // Merge — add tasks that don't already exist by ID
+          var existingIds=APP.tasks.map(function(t){return t.id;});
+          var newTasks=APP.tasks.concat(data.tasks.filter(function(t){return existingIds.indexOf(t.id)<0;}));
+          var existingLogIds=APP.logs.map(function(l){return l.id;});
+          var newLogs=APP.logs.concat((data.logs||[]).filter(function(l){return existingLogIds.indexOf(l.id)<0;}));
+          S.set('oic_tasks9',newTasks);S.set('oic_logs9',newLogs);
+          set({tasks:newTasks,logs:newLogs});
+          alert('Merged successfully! Added '+(newTasks.length-APP.tasks.length)+' new tasks.');
+        }
+      }catch(err){alert('Could not read file. Make sure it is a valid OIC Task Manager backup.');}
+    };
     r.readAsText(f);
   });
-  var impBtn=btn('btn-ghost','⬆ Import backup',function(){impFile.click();});
-  var clrBtn=btn('btn-ghost','🗑 Clear all data',function(){if(window.confirm('Delete ALL tasks and logs?')){S.set('oic_tasks9',[]);S.set('oic_logs9',[]);set({tasks:[],logs:[]});}});
+  var impBtn=btn('btn-ghost','⬆ Import from backup',function(){impFile.click();});
+  var impNote=d({style:{fontSize:'12px',color:'var(--muted)',marginTop:'6px'}},'You can choose to replace all data or merge with existing tasks when importing.');
+  var impWrap=d({});impWrap.appendChild(impBtn);impWrap.appendChild(impFile);impWrap.appendChild(impNote);
+
+  // Clear
+  var clrBtn=btn('btn-ghost','🗑 Clear all data',function(){
+    if(window.confirm('Delete ALL tasks, logs and settings? This cannot be undone.\n\nTip: Export a backup first!')){
+      S.set('oic_tasks9',[]);S.set('oic_logs9',[]);
+      set({tasks:[],logs:[]});
+      alert('All data cleared.');
+    }
+  });
   clrBtn.style.color='var(--danger)';
-  dataC.appendChild(row('Export','Backup tasks, logs & settings',expBtn));
-  dataC.appendChild(row('Import','Restore from backup',[impBtn,impFile]));
-  dataC.appendChild(row('Clear','Permanently delete all data',clrBtn));
+
+  // Transfer instructions
+  var instrCard=d({style:{background:'var(--info-bg)',border:'0.5px solid var(--info-bd)',borderRadius:'8px',padding:'12px',marginTop:'8px',fontSize:'12px',color:'var(--info)',lineHeight:'1.8'}});
+  instrCard.innerHTML='<strong>📱 How to transfer to another device:</strong><br>'
+    +'1. Click <strong>Export backup</strong> above — saves a .json file<br>'
+    +'2. Send the file to yourself via <strong>email, Google Drive, or USB</strong><br>'
+    +'3. Open OIC Task Manager on the other device<br>'
+    +'4. Go to <strong>Settings → Import from backup</strong><br>'
+    +'5. Select the .json file — choose Replace or Merge';
+
+  dataC.appendChild(row('Export','Transfer data to another device or keep as backup',expWrap));
+  dataC.appendChild(row('Import','Restore from a previous backup file',impWrap));
+  dataC.appendChild(row('Clear all','Permanently delete all tasks and logs',clrBtn));
+  dataC.appendChild(instrCard);
 
   var abt=d({className:'card'});
   abt.appendChild(d({className:'hdr',style:{fontSize:'16px',marginBottom:'8px'}},'About'));
