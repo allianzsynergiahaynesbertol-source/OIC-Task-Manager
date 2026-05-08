@@ -715,9 +715,12 @@ function settingsTab(){
   var cfg=APP.cfg||defSettings();
   function saveCfg(k,v){var nc=Object.assign({},APP.cfg);nc[k]=v;S.set('oic_cfg',nc);set({cfg:nc},true);}
   function row(lbl,desc,ctrl){
+    var ctrlWrap=d({style:{flexShrink:0,minWidth:'160px'}});
+    var ctrls=Array.isArray(ctrl)?ctrl:[ctrl];
+    ctrls.forEach(function(c){if(c&&c.nodeType)ctrlWrap.appendChild(c);});
     return d({className:'setting-row'},[
       d({style:{flex:1}},[d({style:{fontSize:'13px',fontWeight:'500',color:'var(--text)',marginBottom:'3px'}},lbl),d({style:{fontSize:'12px',color:'var(--muted)'}},desc)]),
-      d({style:{flexShrink:0,minWidth:'160px'}},[ctrl]),
+      ctrlWrap,
     ]);
   }
   var pc=d({className:'card',style:{marginBottom:'1.25rem'}});
